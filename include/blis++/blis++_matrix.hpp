@@ -188,7 +188,7 @@ class Matrix : private obj_t
 
         Matrix& operator=(const type& val)
         {
-            Matrix<T> s(val);
+            Matrix<T> s(real(val), imag(val));
             bli_setm(s, this);
             return *this;
         }

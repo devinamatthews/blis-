@@ -87,6 +87,16 @@ class Memory
             return *this;
         }
 
+        type& operator[](dim_t i)
+        {
+            return _ptr[i];
+        }
+
+        const type& operator[](dim_t i) const
+        {
+            return _ptr[i];
+        }
+
         operator type*() { return _ptr; }
 
         operator const type*() const { return _ptr; }

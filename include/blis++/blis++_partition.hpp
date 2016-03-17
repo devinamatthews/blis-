@@ -78,12 +78,12 @@ void ViewNoTranspose(Matrix<T>& A, Matrix<T>& V)
 
     if (A.is_transposed())
     {
-        V.reset(A.width(), A.length(), A,
+        V.reset(A.width(), A.length(), A.data(),
                 A.col_stride(), A.row_stride());
     }
     else
     {
-        V.reset(A.length(), A.width(), A,
+        V.reset(A.length(), A.width(), A.data(),
                 A.row_stride(), A.col_stride());
     }
 }

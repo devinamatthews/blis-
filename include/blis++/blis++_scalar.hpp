@@ -51,12 +51,12 @@ class Scalar : public Matrix<T>
 
         operator type&()
         {
-            return *(type*)(*this);
+            return *this->data();
         }
 
         operator const type&() const
         {
-            return *(type*)(*this);
+            return *this->data();
         }
 };
 

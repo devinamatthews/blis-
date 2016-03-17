@@ -63,7 +63,7 @@ class Matrix : private obj_t
                    other.row_stride(), other.col_stride());
 
             Matrix other_no_trans(length(), width(),
-                                  const_cast<type*>(static_cast<const type*>(other)),
+                                  const_cast<Matrix&>(other).data(),
                                   row_stride(), col_stride());
 
             bli_copym(other_no_trans, this);
@@ -374,8 +374,7 @@ class Matrix : private obj_t
 
         void shift_down(dim_t m)
         {
-            type* p = *this;
-            bli_obj_set_buffer(p+m*row_stride(), *this);
+            bli_obj_set_buffer(data()+m*row_stride(), *this);
         }
 
         void shift_up(dim_t m)
@@ -385,8 +384,7 @@ class Matrix : private obj_t
 
         void shift_right(dim_t n)
         {
-            type* p = *this;
-            bli_obj_set_buffer(p+n*col_stride(), *this);
+            bli_obj_set_buffer(data()+n*col_stride(), *this);
         }
 
         void shift_left(dim_t n)
@@ -414,12 +412,12 @@ class Matrix : private obj_t
             shift_left(width());
         }
 
-        operator type*()
+        type* data()
         {
             return (type*)bli_obj_buffer(*this);
         }
 
-        operator const type*() const
+        const type* data() const
         {
             return (const type*)bli_obj_buffer(*this);
         }

@@ -213,12 +213,6 @@ class Matrix : private obj_t
             create(std::move(other));
         }
 
-        void reset(real_type r, real_type i)
-        {
-            free();
-            create(r, i);
-        }
-
         void reset(const type& val)
         {
             free();

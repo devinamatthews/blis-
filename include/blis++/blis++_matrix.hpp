@@ -57,18 +57,26 @@ class Matrix : private obj_t
 
         void create(const Matrix& other)
         {
-            _is_view = false;
+            _is_view = other._is_view;
 
-            create(other.length(), other.width(),
-                   other.row_stride(), other.col_stride());
+            if (_is_view)
+            {
+                memcpy(static_cast<      obj_t*>(this),
+                       static_cast<const obj_t*>(&other), sizeof(obj_t));
+            }
+            else
+            {
+                create(other.length(), other.width(),
+                       other.row_stride(), other.col_stride());
 
-            Matrix other_no_trans(length(), width(),
-                                  const_cast<Matrix&>(other).data(),
-                                  row_stride(), col_stride());
+                Matrix other_no_trans(length(), width(),
+                                      const_cast<Matrix&>(other).data(),
+                                      row_stride(), col_stride());
 
-            bli_copym(other_no_trans, this);
+                bli_copym(other_no_trans, this);
 
-            this->conjtrans(other.conjtrans());
+                this->conjtrans(other.conjtrans());
+            }
         }
 
         void create(Matrix&& other)
@@ -428,7 +436,19 @@ class Matrix : private obj_t
 
         Matrix operator^(trans_op_t trans)
         {
-            Matrix view(length(), width(), *this, row_stride(), col_stride());
+            Matrix view;
+            View(*this, view);
+
+            if (trans.transpose()) view.transpose();
+            if (trans.conjugate()) view.conjugate();
+
+            return view;
+        }
+
+        Matrix operator^(trans_op_t trans) const
+        {
+            Matrix view;
+            LockedView(*this, view);
 
             if (trans.transpose()) view.transpose();
             if (trans.conjugate()) view.conjugate();

@@ -62,11 +62,17 @@ void View(Matrix<T>& A, Matrix<T>& V)
 {
     detail::AssertNotSelfView(A, V);
 
-    V.reset(A.length(), A.width(), A,
+    V.reset(A.length(), A.width(), A.data(),
             A.row_stride(), A.col_stride());
 
     if (A.is_transposed()) V.transpose();
     if (A.is_conjugated()) V.conjugate();
+}
+
+template <typename T>
+void View(Matrix<T>&& A, Matrix<T>& V)
+{
+    View(A, V);
 }
 
 template <typename T>
@@ -86,6 +92,12 @@ void ViewNoTranspose(Matrix<T>& A, Matrix<T>& V)
         V.reset(A.length(), A.width(), A.data(),
                 A.row_stride(), A.col_stride());
     }
+}
+
+template <typename T>
+void ViewNoTranspose(Matrix<T>&& A, Matrix<T>& V)
+{
+    ViewNoTranspose(A, V);
 }
 
 template <typename T>

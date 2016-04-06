@@ -24,11 +24,21 @@ class Memory
     public:
         Memory(const Memory&) = delete;
 
-        Memory(Memory&&) = default;
+        Memory(Memory&& other)
+        : _ptr(other._ptr), _size(other._size)
+        {
+            std::swap(_mem._base, other._mem._base);
+        }
 
         Memory& operator=(const Memory&) = delete;
 
-        Memory& operator=(Memory&&) = default;
+        Memory& operator=(Memory&& other)
+        {
+            std::swap(_ptr, other._ptr);
+            std::swap(_size, other._size);
+            std::swap(_mem._base, other._mem._base);
+            return *this;
+        }
 
         explicit Memory(siz_t size, Allocator alloc = Allocator())
         : _mem(alloc)

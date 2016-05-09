@@ -3224,14 +3224,14 @@ fi
             memkind_INCLUDES=$include_flags
 
 
-        if test x"" != x; then
+        if test x"memkind_get_version" != x; then
             lib_flags=
             for dir_path in lib lib64; do
                 as_fn_append lib_flags " -L$pkg_dir/$dir_path"
             done
             as_fn_append lib_flags " $libraries"
             if test x"$downloaded" != xyes; then
-                for symbol in ; do
+                for symbol in memkind_get_version; do
                       ac_save_LIBS="$LIBS"
   LIBS="$LIBS $lib_flags  $LAPACK_LIBS $BLAS_LIBS"
   as_ac_var=`$as_echo "ac_cv_func_$symbol" | $as_tr_sh`
@@ -3268,7 +3268,6 @@ else
 fi
 
 
-                #memkind_get_version
 
 mkdir -p bin
 

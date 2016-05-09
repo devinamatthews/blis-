@@ -27,8 +27,7 @@ AC_DEFINE_UNQUOTED([TOPDIR], [$topdir], [The top source directory.])
 #
 AQ_WITH_PACKAGE([memkind], [],
                 [memkind.h], [],
-                [], [-lmemkind])
-                #memkind_get_version
+                [memkind_get_version], [-lmemkind])
                 
 mkdir -p bin
 

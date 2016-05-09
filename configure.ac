@@ -3,8 +3,8 @@ AC_INIT(blis++, 1.0, dmatthews@utexas.edu, tensor, http://www.github.com/devinam
 AC_CONFIG_MACRO_DIR([m4])
 
 AH_TOP([
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef _BLISPP_CONFIG_H_
+#define _BLISPP_CONFIG_H_
 ])
 AH_BOTTOM([
 #ifndef DEBUG
@@ -32,4 +32,5 @@ AQ_WITH_PACKAGE([memkind], [],
 mkdir -p bin
 
 AC_CONFIG_HEADERS([config.h])
+AX_PREFIX_CONFIG_H([include/blis++_config.h], [BLISPP])
 AC_OUTPUT

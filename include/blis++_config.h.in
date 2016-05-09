@@ -1,4 +1,4 @@
-/* config.h.in.  Generated from configure.ac by autoheader.  */
+/* include/blis++_config.h.in.  Generated from configure.ac by autoheader.  */
 
 
 #ifndef _BLISPP_CONFIG_H_

@@ -5,6 +5,8 @@
 #include "blis/bli_obj_macro_defs.h"
 #include "blis/bli_scalar_macro_defs.h"
 
+#include "blis++_config.h"
+
 #include <complex>
 #include <type_traits>
 

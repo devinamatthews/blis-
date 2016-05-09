@@ -3273,6 +3273,9 @@ mkdir -p bin
 
 ac_config_headers="$ac_config_headers config.h"
 
+
+ac_config_commands="$ac_config_commands include/blis++_config.h"
+
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -3806,6 +3809,7 @@ esac
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_headers="$ac_config_headers"
+config_commands="$ac_config_commands"
 
 _ACEOF
 
@@ -3829,6 +3833,9 @@ Usage: $0 [OPTION]... [TAG]...
 
 Configuration headers:
 $config_headers
+
+Configuration commands:
+$config_commands
 
 Report bugs to <dmatthews@utexas.edu>.
 blis++ home page: <http://www.github.com/devinamatthews/blisplusplus>."
@@ -3942,6 +3949,11 @@ _ASBOX
 
 _ACEOF
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
+#
+# INIT-COMMANDS
+#
+PACKAGE="$PACKAGE"
+
 _ACEOF
 
 cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
@@ -3951,6 +3963,7 @@ for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
+    "include/blis++_config.h") CONFIG_COMMANDS="$CONFIG_COMMANDS include/blis++_config.h" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -3963,6 +3976,7 @@ done
 # bizarre bug on SunOS 4.1.3.
 if $ac_need_defaults; then
   test "${CONFIG_HEADERS+set}" = set || CONFIG_HEADERS=$config_headers
+  test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
 # Have a temporary directory for convenience.  Make it in the build tree
@@ -4101,7 +4115,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_HEADERS"
 
 
-eval set X "    :H $CONFIG_HEADERS    "
+eval set X "    :H $CONFIG_HEADERS    :C $CONFIG_COMMANDS"
 shift
 for ac_tag
 do
@@ -4256,9 +4270,104 @@ $as_echo "$as_me: $ac_file is unchanged" >&6;}
   fi
  ;;
 
-
+  :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
+$as_echo "$as_me: executing $ac_file commands" >&6;}
+ ;;
   esac
 
+
+  case $ac_file$ac_mode in
+    "include/blis++_config.h":C) ac_prefix_conf_OUT=`echo include/blis++_config.h`
+ac_prefix_conf_DEF=`echo _$ac_prefix_conf_OUT | sed -e "y:abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:" -e "s/[^abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g"`
+ac_prefix_conf_PKG=`echo BLISPP`
+ac_prefix_conf_LOW=`echo _$ac_prefix_conf_PKG | sed -e "y:ABCDEFGHIJKLMNOPQRSTUVWXYZ-:abcdefghijklmnopqrstuvwxyz_:"`
+ac_prefix_conf_UPP=`echo $ac_prefix_conf_PKG | sed -e "y:abcdefghijklmnopqrstuvwxyz-:ABCDEFGHIJKLMNOPQRSTUVWXYZ_:"  -e "/^[0123456789]/s/^/_/"`
+ac_prefix_conf_INP=`echo "" | sed -e 's/ *//'`
+if test ".$ac_prefix_conf_INP" = "."; then
+   for ac_file in : $CONFIG_HEADERS; do test "_$ac_file" = _: && continue
+     case "$ac_file" in
+        *.h) ac_prefix_conf_INP=$ac_file ;;
+        *)
+     esac
+     test ".$ac_prefix_conf_INP" != "." && break
+   done
+fi
+if test ".$ac_prefix_conf_INP" = "."; then
+   case "$ac_prefix_conf_OUT" in
+      */*) ac_prefix_conf_INP=`basename "$ac_prefix_conf_OUT"`
+      ;;
+      *-*) ac_prefix_conf_INP=`echo "$ac_prefix_conf_OUT" | sed -e "s/[abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*-//"`
+      ;;
+      *) ac_prefix_conf_INP=config.h
+      ;;
+   esac
+fi
+if test -z "$ac_prefix_conf_PKG" ; then
+   as_fn_error $? "no prefix for _PREFIX_PKG_CONFIG_H" "$LINENO" 5
+else
+  if test ! -f "$ac_prefix_conf_INP" ; then if test -f "$srcdir/$ac_prefix_conf_INP" ; then
+     ac_prefix_conf_INP="$srcdir/$ac_prefix_conf_INP"
+  fi fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: creating $ac_prefix_conf_OUT - prefix $ac_prefix_conf_UPP for $ac_prefix_conf_INP defines" >&5
+$as_echo "$as_me: creating $ac_prefix_conf_OUT - prefix $ac_prefix_conf_UPP for $ac_prefix_conf_INP defines" >&6;}
+  if test -f $ac_prefix_conf_INP ; then
+    $as_echo "s/^#undef  *\\([ABCDEFGHIJKLMNOPQRSTUVWXYZ_]\\)/#undef $ac_prefix_conf_UPP""_\\1/" > conftest.prefix
+    $as_echo "s/^#undef  *\\([abcdefghijklmnopqrstuvwxyz]\\)/#undef $ac_prefix_conf_LOW""_\\1/" >> conftest.prefix
+    $as_echo "s/^#define  *\\([ABCDEFGHIJKLMNOPQRSTUVWXYZ_][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*\\)\\(.*\\)/#ifndef $ac_prefix_conf_UPP""_\\1\\" >> conftest.prefix
+    $as_echo "#define $ac_prefix_conf_UPP""_\\1\\2\\" >> conftest.prefix
+    $as_echo "#endif/" >> conftest.prefix
+    $as_echo "s/^#define  *\\([abcdefghijklmnopqrstuvwxyz][abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_]*\\)\\(.*\\)/#ifndef $ac_prefix_conf_LOW""_\\1\\" >> conftest.prefix
+    $as_echo "#define $ac_prefix_conf_LOW""_\\1\\2\\" >> conftest.prefix
+    $as_echo "#endif/" >> conftest.prefix
+    # now executing _script on _DEF input to create _OUT output file
+    echo "#ifndef $ac_prefix_conf_DEF"      >$tmp/pconfig.h
+    echo "#define $ac_prefix_conf_DEF 1" >>$tmp/pconfig.h
+    echo ' ' >>$tmp/pconfig.h
+    echo /'*' $ac_prefix_conf_OUT. Generated automatically at end of configure. '*'/ >>$tmp/pconfig.h
+
+    sed -f conftest.prefix $ac_prefix_conf_INP >>$tmp/pconfig.h
+    echo ' ' >>$tmp/pconfig.h
+    echo '/* once:' $ac_prefix_conf_DEF '*/' >>$tmp/pconfig.h
+    echo "#endif" >>$tmp/pconfig.h
+    if cmp -s $ac_prefix_conf_OUT $tmp/pconfig.h 2>/dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: $ac_prefix_conf_OUT is unchanged" >&5
+$as_echo "$as_me: $ac_prefix_conf_OUT is unchanged" >&6;}
+    else
+      ac_dir=`$as_dirname -- "$ac_prefix_conf_OUT" ||
+$as_expr X"$ac_prefix_conf_OUT" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X"$ac_prefix_conf_OUT" : 'X\(//\)[^/]' \| \
+	 X"$ac_prefix_conf_OUT" : 'X\(//\)$' \| \
+	 X"$ac_prefix_conf_OUT" : 'X\(/\)' \| . 2>/dev/null ||
+$as_echo X"$ac_prefix_conf_OUT" |
+    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\/\)[^/].*/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\/\)$/{
+	    s//\1/
+	    q
+	  }
+	  /^X\(\/\).*/{
+	    s//\1/
+	    q
+	  }
+	  s/.*/./; q'`
+      as_dir="$ac_dir"; as_fn_mkdir_p
+      rm -f "$ac_prefix_conf_OUT"
+      mv $tmp/pconfig.h "$ac_prefix_conf_OUT"
+    fi
+  else
+    as_fn_error $? "input file $ac_prefix_conf_INP does not exist - skip generating $ac_prefix_conf_OUT" "$LINENO" 5
+  fi
+  rm -f conftest.*
+fi
+ ;;
+
+  esac
 done # for ac_tag
 
 

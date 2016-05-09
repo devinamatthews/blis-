@@ -1,5 +1,6 @@
 autom4te.cache
 config.h
+blis++_config.h
 *~
 config.log
 config.status

@@ -38,7 +38,7 @@ namespace detail
         typename std::enable_if<is_complex<T>::value>::type;
 }
 
-template <typename T>
+template <typename T, typename Allocator=std::allocator<T>>
 class Matrix : private obj_t
 {
     public:
@@ -46,6 +46,7 @@ class Matrix : private obj_t
         typedef typename real_type<T>::type real_type;
 
     private:
+        Memory<T,Allocator> _mem;
         bool _is_view;
 
     protected:
@@ -86,6 +87,7 @@ class Matrix : private obj_t
 
             _is_view = other._is_view;
             other._is_view = true;
+            _mem = std::move(other._mem);
         }
 
         void create(double r, double i)
@@ -97,38 +99,51 @@ class Matrix : private obj_t
 
         void create(dim_t m, dim_t n)
         {
-            _is_view = false;
-            bli_obj_create(datatype<type>::value, m, n, 0, 0, this);
+            create(m, n, 0, 0);
         }
 
         void create(dim_t m, dim_t n, inc_t rs, inc_t cs)
         {
             _is_view = false;
-            bli_obj_create(datatype<type>::value, m, n, rs, cs, this);
+
+            siz_t elem_size = bli_obj_elem_size(*this);
+            inc_t is = 1;
+
+            bli_adjust_strides(m, n, elem_size, &rs, &cs, &is);
+
+            if (bli_error_checking_is_enabled())
+                bli_obj_alloc_buffer_check(rs, cs, is, this);
+
+            siz_t n_elem = 0;
+
+            if (m > 0 || n > 0)
+            {
+                n_elem = (m-1)*bli_abs(rs) + (n-1)*bli_abs(cs) + 1;
+            }
+
+            if (bli_obj_is_complex(*this))
+            {
+                n_elem += bli_abs(is)/2;
+            }
+
+            bli_obj_create_with_attached_buffer(datatype<type>::value, m, n, _mem.reset(n_elem), rs, cs, this);
         }
 
         void create(dim_t m, dim_t n, type* p)
         {
-            _is_view = true;
-            bli_obj_create_with_attached_buffer(datatype<type>::value, m, n, p, 1, m, this);
+            create(m, n, p, 1, m);
         }
 
         void create(dim_t m, dim_t n, type* p, inc_t rs, inc_t cs)
         {
             _is_view = true;
+
             bli_obj_create_with_attached_buffer(datatype<type>::value, m, n, p, rs, cs, this);
         }
 
         void free()
         {
-            mem_t* mem_p = bli_obj_pack_mem(*this);
-
-            if (!bli_mem_is_unalloc(mem_p))
-            {
-                bli_mem_release(mem_p);
-            }
-
-            if (!_is_view) bli_obj_free(this);
+            _mem.reset();
         }
 
         Matrix(double r, double i)

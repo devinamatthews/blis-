@@ -1,9 +1,8 @@
 #ifndef _BLISPP_PARTITION_HPP_
 #define _BLISPP_PARTITION_HPP_
 
-#include "blis++_matrix.hpp"
-
 #include <stdexcept>
+#include "blis++_matrix.hpp"
 
 namespace blis
 {

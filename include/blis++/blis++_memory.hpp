@@ -1,25 +1,27 @@
 #ifndef _BLISPP_MEMORY_HPP_
 #define _BLISPP_MEMORY_HPP_
 
+#include <stdexcept>
 #include "blis++.hpp"
+
+#if HAVE_MEMKIND
+#include "memkind.h"
+#endif
 
 namespace blis
 {
 
-template <typename T, typename Allocator=std::allocator<T> >
-class Memory
+template <typename T, typename Allocator=std::allocator<T>>
+class Memory : private Allocator
 {
     public:
         typedef T type;
 
     private:
-        struct _mem_s : Allocator
-        {
-            type* _base = NULL;
-            _mem_s(Allocator alloc) : Allocator(alloc), _base(NULL) {}
-        } _mem;
-        type* _ptr = NULL;
+        type* _ptr = nullptr;
         siz_t _size = 0;
+
+        typedef std::allocator_traits<Allocator> _traits;
 
     public:
         Memory(const Memory&) = delete;
@@ -27,7 +29,7 @@ class Memory
         Memory(Memory&& other)
         : _ptr(other._ptr), _size(other._size)
         {
-            std::swap(_mem._base, other._mem._base);
+            other._ptr = nullptr;
         }
 
         Memory& operator=(const Memory&) = delete;
@@ -36,75 +38,36 @@ class Memory
         {
             std::swap(_ptr, other._ptr);
             std::swap(_size, other._size);
-            std::swap(_mem._base, other._mem._base);
             return *this;
         }
 
         explicit Memory(siz_t size, Allocator alloc = Allocator())
-        : _mem(alloc)
+        : Allocator(alloc)
         {
             reset(size);
         }
 
         explicit Memory(Allocator alloc = Allocator())
-        : _mem(alloc) {}
-
-        explicit Memory(type* ptr)
-        : _mem(Allocator())
-        {
-            reset(ptr);
-        }
+        : Allocator(alloc) {}
 
         ~Memory()
         {
-            free();
+            reset();
         }
 
-        void reset(siz_t size = 0)
+        type* reset(siz_t size = 0)
         {
-            free();
+            if (_ptr) _traits::deallocate(*this, _ptr, _size);
+            _ptr = nullptr;
+            _size = 0;
+
             if (size > 0)
             {
-                _mem._base = _mem.allocate(size);
+                _ptr = _traits::allocate(*this, size);
                 _size = size;
-                _ptr = _mem._base;
             }
-        }
 
-        void reset(type* ptr)
-        {
-            free();
-            _ptr = ptr;
-        }
-
-        void free()
-        {
-            if (_mem._base) _mem.deallocate(_mem._base, _size);
-            _mem._base = NULL;
-            _size = 0;
-            _ptr = NULL;
-        }
-
-        Memory& operator+=(inc_t x)
-        {
-            _ptr += x;
-            return *this;
-        }
-
-        Memory& operator-=(inc_t x)
-        {
-            _ptr -= x;
-            return *this;
-        }
-
-        type& operator[](dim_t i)
-        {
-            return _ptr[i];
-        }
-
-        const type& operator[](dim_t i) const
-        {
-            return _ptr[i];
+            return _ptr;
         }
 
         operator type*() { return _ptr; }
@@ -187,6 +150,96 @@ class PooledMemory : private mem_t
 
         operator const type*() const { return (type*)bli_mem_buffer(this); }
 };
+
+template <typename T, size_t Alignment=BLIS_HEAP_ADDR_ALIGN_SIZE>
+class AlignedAllocator
+{
+    public:
+        typename T value_type;
+
+        template <typename U, size_t UAlignment>
+        AlignedAllocator(AlignedAllocator<U,UAlignment> other) {}
+
+        T* allocate(size_t n) const
+        {
+            T* ptr;
+            int ret = posix_memalign(&ptr, Alignment, n*sizeof(T));
+            if (ret != 0) throw std::bad_alloc();
+            return ptr;
+        }
+
+        void deallocate(const T* ptr, size_t n) const
+        {
+            free(ptr);
+        }
+
+        bool operator==(const AlignedAllocator& other) const { return true; }
+
+        bool operator!=(const AlignedAllocator& other) const { return false; }
+};
+
+#if HAVE_MEMKIND
+
+enum MemkindType
+{
+    MEMKIND_DDR_4K,
+    MEMKIND_HBM_4K,
+    MEMKIND_DDR_2M,
+    MEMKIND_HBM_2M,
+    MEMKIND_DDR_1G,
+    MEMKIND_HBM_1G,
+    MEMKIND_DDR = MEMKIND_DDR_4K,
+    MEMKIND_HBM = MEMKIND_HBM_4K
+};
+
+template <typename T, MemkindType Type=MEMKIND_DDR_4K, size_t Alignment=BLIS_HEAP_ADDR_ALIGN_SIZE>
+class MemkindAllocator
+{
+    public:
+        typename T value_type;
+
+        template <typename U, MemkindType UType, size_t UAlignment>
+        MemkindAllocator(MemkindAllocator<U,UType,UAlignment> other) {}
+
+        T* allocate(size_t n) const
+        {
+            T* ptr;
+            int ret;
+
+            switch (Type)
+            {
+                case MEMKIND_DDR_4K: ret = memkind_posix_memalign(MEMKIND_DEFAULT,     &ptr, Alignment, n*sizeof(T)); break;
+                case MEMKIND_DDR_2M: ret = memkind_posix_memalign(MEMKIND_HUGETLB,     &ptr, Alignment, n*sizeof(T)); break;
+                case MEMKIND_DDR_1G: ret = memkind_posix_memalign(MEMKIND_GBTLB,       &ptr, Alignment, n*sizeof(T)); break;
+                case MEMKIND_HBM_4K: ret = memkind_posix_memalign(MEMKIND_HBW,         &ptr, Alignment, n*sizeof(T)); break;
+                case MEMKIND_HBM_2M: ret = memkind_posix_memalign(MEMKIND_HBW_HUGETLB, &ptr, Alignment, n*sizeof(T)); break;
+                case MEMKIND_HBM_1G: ret = memkind_posix_memalign(MEMKIND_HBW_GBTLB,   &ptr, Alignment, n*sizeof(T)); break;
+            }
+
+            if (ret != 0) throw std::bad_alloc();
+
+            return ptr;
+        }
+
+        void deallocate(const T* ptr, size_t n) const
+        {
+            switch (Type)
+            {
+                case MEMKIND_DDR_4K: memkind_free(MEMKIND_DEFAULT,     ptr); break;
+                case MEMKIND_DDR_2M: memkind_free(MEMKIND_HUGETLB,     ptr); break;
+                case MEMKIND_DDR_1G: memkind_free(MEMKIND_GBTLB,       ptr); break;
+                case MEMKIND_HBM_4K: memkind_free(MEMKIND_HBW,         ptr); break;
+                case MEMKIND_HBM_2M: memkind_free(MEMKIND_HBW_HUGETLB, ptr); break;
+                case MEMKIND_HBM_1G: memkind_free(MEMKIND_HBW_GBTLB,   ptr); break;
+            }
+        }
+
+        bool operator==(const MemkindAllocator& other) const { return true; }
+
+        bool operator!=(const MemkindAllocator& other) const { return false; }
+};
+
+#endif
 
 }
 

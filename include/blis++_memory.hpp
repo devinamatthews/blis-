@@ -155,7 +155,7 @@ template <typename T, size_t Alignment=BLIS_HEAP_ADDR_ALIGN_SIZE>
 class AlignedAllocator
 {
     public:
-        typename T value_type;
+        typedef T value_type;
 
         template <typename U, size_t UAlignment>
         AlignedAllocator(AlignedAllocator<U,UAlignment> other) {}

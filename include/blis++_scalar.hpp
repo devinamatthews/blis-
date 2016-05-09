@@ -16,10 +16,10 @@ class Scalar : public Matrix<T>
         Scalar()
         : Matrix<type>(0.0, 0.0) {}
 
-        Scalar(real_type r, real_type i)
+        explicit Scalar(real_type r, real_type i)
         : Matrix<type>(r, i) {}
 
-        Scalar(const type& val)
+        explicit Scalar(const type& val)
         : Matrix<type>(real(val), imag(val)) {}
 
         explicit Scalar(type* p)

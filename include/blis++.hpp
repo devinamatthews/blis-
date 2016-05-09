@@ -140,8 +140,8 @@ detail::complex_op<T,U,bool,true> operator>=(const T& a, const U& b)
 
 }
 
-#include "blis++_matrix.hpp"
 #include "blis++_memory.hpp"
+#include "blis++_matrix.hpp"
 #include "blis++_partition.hpp"
 #include "blis++_scalar.hpp"
 #include "blis++_vector.hpp"

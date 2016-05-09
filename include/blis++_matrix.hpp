@@ -1,7 +1,7 @@
 #ifndef _BLISPP_MATRIX_HPP_
 #define _BLISPP_MATRIX_HPP_
 
-#include "blis++.hpp"
+#include "blis++_memory.hpp"
 
 namespace blis
 {
@@ -106,13 +106,10 @@ class Matrix : private obj_t
         {
             _is_view = false;
 
-            siz_t elem_size = bli_obj_elem_size(*this);
+            siz_t elem_size = sizeof(T);
             inc_t is = 1;
 
             bli_adjust_strides(m, n, elem_size, &rs, &cs, &is);
-
-            if (bli_error_checking_is_enabled())
-                bli_obj_alloc_buffer_check(rs, cs, is, this);
 
             siz_t n_elem = 0;
 

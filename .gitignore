@@ -4,3 +4,12 @@ blis++_config.h
 *~
 config.log
 config.status
+stamp-h1
+.dirstamp
+Makefile
+*.Po
+*.o
+*.a
+*.so
+bin
+lib

@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include "blis++.hpp"
 
-#if HAVE_MEMKIND
+#if BLISPP_HAVE_MEMKIND
 #include "memkind.h"
 #endif
 
@@ -178,7 +178,7 @@ class AlignedAllocator
         bool operator!=(const AlignedAllocator& other) const { return false; }
 };
 
-#if HAVE_MEMKIND
+#if BLISPP_HAVE_MEMKIND
 
 enum MemkindType
 {

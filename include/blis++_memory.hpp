@@ -157,18 +157,20 @@ class AlignedAllocator
     public:
         typedef T value_type;
 
+        AlignedAllocator() {}
+
         template <typename U, size_t UAlignment>
         AlignedAllocator(AlignedAllocator<U,UAlignment> other) {}
 
         T* allocate(size_t n) const
         {
             T* ptr;
-            int ret = posix_memalign(&ptr, Alignment, n*sizeof(T));
+            int ret = posix_memalign((void**)&ptr, Alignment, n*sizeof(T));
             if (ret != 0) throw std::bad_alloc();
             return ptr;
         }
 
-        void deallocate(const T* ptr, size_t n) const
+        void deallocate(T* ptr, size_t n) const
         {
             free(ptr);
         }
@@ -197,6 +199,8 @@ class MemkindAllocator
 {
     public:
         typename T value_type;
+
+        MemkindAllocator() {}
 
         template <typename U, MemkindType UType, size_t UAlignment>
         MemkindAllocator(MemkindAllocator<U,UType,UAlignment> other) {}

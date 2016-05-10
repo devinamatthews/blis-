@@ -12,6 +12,14 @@
 using namespace std;
 using namespace blis;
 
+#ifdef BLISPP_HAVE_MEMKIND
+template <typename T>
+using AlignedMatrix = Matrix<T,MemkindAllocator<T,MEMKIND_HBM_2M>>;
+#else
+template <typename T>
+using AlignedMatrix = Matrix<T,AlignedAllocator<T>>;
+#endif
+
 #define NREPEAT 5
 
 class range
@@ -217,7 +225,7 @@ double run_trial(dim_t m, dim_t n, dim_t k)
         bias = min(bias, t1-t0);
     }
 
-    Matrix<T> A(m,k), B(k,n), C(m,n);
+    AlignedMatrix<T> A(m,k), B(k,n), C(m,n);
     Scalar<T> alpha(1.0), beta(0.0);
 
     A = 0.0;

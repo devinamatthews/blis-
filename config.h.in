@@ -14,6 +14,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define if libhugetlbfs is to be used. */
+#undef HAVE_LIBHUGETLBFS
+
 /* Define if memkind is to be used. */
 #undef HAVE_MEMKIND
 

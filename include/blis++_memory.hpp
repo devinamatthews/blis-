@@ -2,10 +2,19 @@
 #define _BLISPP_MEMORY_HPP_
 
 #include <stdexcept>
-#include "blis++.hpp"
+#include <memory>
+
+#include "blis/blis.h"
 
 #if BLISPP_HAVE_MEMKIND
 #include "memkind.h"
+#endif
+
+#if BLISPP_HAVE_LIBHUGETLBFS
+extern "C"
+{
+#include "hugetlbfs.h"
+}
 #endif
 
 namespace blis
@@ -20,8 +29,6 @@ class Memory : private Allocator
     private:
         type* _ptr = nullptr;
         siz_t _size = 0;
-
-        typedef std::allocator_traits<Allocator> _traits;
 
     public:
         Memory(const Memory&) = delete;
@@ -57,13 +64,13 @@ class Memory : private Allocator
 
         type* reset(siz_t size = 0)
         {
-            if (_ptr) _traits::deallocate(*this, _ptr, _size);
+            if (_ptr) this->deallocate(_ptr, _size);
             _ptr = nullptr;
             _size = 0;
 
             if (size > 0)
             {
-                _ptr = _traits::allocate(*this, size);
+                _ptr = this->allocate(size);
                 _size = size;
             }
 
@@ -151,29 +158,39 @@ class PooledMemory : private mem_t
         operator const type*() const { return (type*)bli_mem_buffer(this); }
 };
 
-template <typename T, size_t Alignment=BLIS_HEAP_ADDR_ALIGN_SIZE>
+enum MemoryType
+{
+    MEMORY_DDR_4K,
+    MEMORY_HBM_4K,
+    MEMORY_DDR_2M,
+    MEMORY_HBM_2M,
+    MEMORY_DDR_1G,
+    MEMORY_HBM_1G,
+    MEMORY_DDR = MEMORY_DDR_4K,
+    MEMORY_HBM = MEMORY_HBM_4K
+};
+
+template <typename T, MemoryType Type=MEMORY_DDR_4K, size_t Alignment=BLIS_HEAP_ADDR_ALIGN_SIZE>
 class AlignedAllocator
 {
+    protected:
+        template <typename U>
+        static U align(U len, size_t alignment)
+        {
+            return len + (alignment-1) - (len+alignment-1)%alignment;
+        }
+
     public:
         typedef T value_type;
 
         AlignedAllocator() {}
 
-        template <typename U, size_t UAlignment>
-        AlignedAllocator(AlignedAllocator<U,UAlignment> other) {}
+        template <typename U, MemoryType UType, size_t UAlignment>
+        AlignedAllocator(AlignedAllocator<U,UType,UAlignment> other) {}
 
-        T* allocate(size_t n) const
-        {
-            T* ptr;
-            int ret = posix_memalign((void**)&ptr, Alignment, n*sizeof(T));
-            if (ret != 0) throw std::bad_alloc();
-            return ptr;
-        }
+        T* allocate(size_t n) const;
 
-        void deallocate(T* ptr, size_t n) const
-        {
-            free(ptr);
-        }
+        void deallocate(T* ptr, size_t n) const;
 
         bool operator==(const AlignedAllocator& other) const { return true; }
 
@@ -182,66 +199,94 @@ class AlignedAllocator
 
 #if BLISPP_HAVE_MEMKIND
 
-enum MemkindType
+template <typename T, MemoryType Type, size_t Alignment>
+T* AlignedAllocator<T,Type,Alignment>::allocate(size_t n) const
 {
-    MEMKIND_DDR_4K,
-    MEMKIND_HBM_4K,
-    MEMKIND_DDR_2M,
-    MEMKIND_HBM_2M,
-    MEMKIND_DDR_1G,
-    MEMKIND_HBM_1G,
-    MEMKIND_DDR = MEMKIND_DDR_4K,
-    MEMKIND_HBM = MEMKIND_HBM_4K
-};
+    T* ptr;
+    int ret;
 
-template <typename T, MemkindType Type=MEMKIND_DDR_4K, size_t Alignment=BLIS_HEAP_ADDR_ALIGN_SIZE>
-class MemkindAllocator
+    switch (Type)
+    {
+        case MEMORY_DDR_4K: ret = memkind_posix_memalign(MEMKIND_DEFAULT,     &ptr, Alignment, n*sizeof(T)); break;
+        case MEMORY_DDR_2M: ret = memkind_posix_memalign(MEMKIND_HUGETLB,     &ptr, Alignment, n*sizeof(T)); break;
+        case MEMORY_DDR_1G: ret = memkind_posix_memalign(MEMKIND_GBTLB,       &ptr, Alignment, n*sizeof(T)); break;
+        case MEMORY_HBM_4K: ret = memkind_posix_memalign(MEMKIND_HBW,         &ptr, Alignment, n*sizeof(T)); break;
+        case MEMORY_HBM_2M: ret = memkind_posix_memalign(MEMKIND_HBW_HUGETLB, &ptr, Alignment, n*sizeof(T)); break;
+        case MEMORY_HBM_1G: ret = memkind_posix_memalign(MEMKIND_HBW_GBTLB,   &ptr, Alignment, n*sizeof(T)); break;
+    }
+
+    if (ret != 0) throw std::bad_alloc();
+
+    return ptr;
+}
+
+template <typename T, MemoryType Type, size_t Alignment>
+void AlignedAllocator<T,Type,Alignment>::deallocate(const T* ptr, size_t n) const
 {
-    public:
-        typename T value_type;
+    switch (Type)
+    {
+        case MEMORY_DDR_4K: memkind_free(MEMKIND_DEFAULT,     ptr); break;
+        case MEMORY_DDR_2M: memkind_free(MEMKIND_HUGETLB,     ptr); break;
+        case MEMORY_DDR_1G: memkind_free(MEMKIND_GBTLB,       ptr); break;
+        case MEMORY_HBM_4K: memkind_free(MEMKIND_HBW,         ptr); break;
+        case MEMORY_HBM_2M: memkind_free(MEMKIND_HBW_HUGETLB, ptr); break;
+        case MEMORY_HBM_1G: memkind_free(MEMKIND_HBW_GBTLB,   ptr); break;
+    }
+}
 
-        MemkindAllocator() {}
+#elif BLISPP_HAVE_LIBHUGETLBFS
 
-        template <typename U, MemkindType UType, size_t UAlignment>
-        MemkindAllocator(MemkindAllocator<U,UType,UAlignment> other) {}
+template <typename T, MemoryType Type, size_t Alignment>
+T* AlignedAllocator<T,Type,Alignment>::allocate(size_t n) const
+{
+    T* ptr;
 
-        T* allocate(size_t n) const
-        {
-            T* ptr;
-            int ret;
+    if (Type == MEMORY_DDR_4K || Type == MEMORY_HBM_4K)
+    {
+        int ret = posix_memalign((void**)&ptr, Alignment, n*sizeof(T));
+        if (ret != 0) throw std::bad_alloc();
+    }
+    else
+    {
+        char* orig_ptr = (char*)get_hugepage_region(n*sizeof(T) + Alignment + sizeof(char**), GHR_DEFAULT);
+        if (!orig_ptr) throw std::bad_alloc();
+        ptr = (T*)align((intptr_t)(orig_ptr+sizeof(char**)), Alignment);
+        *((char**)ptr-1) = orig_ptr;
+    }
 
-            switch (Type)
-            {
-                case MEMKIND_DDR_4K: ret = memkind_posix_memalign(MEMKIND_DEFAULT,     &ptr, Alignment, n*sizeof(T)); break;
-                case MEMKIND_DDR_2M: ret = memkind_posix_memalign(MEMKIND_HUGETLB,     &ptr, Alignment, n*sizeof(T)); break;
-                case MEMKIND_DDR_1G: ret = memkind_posix_memalign(MEMKIND_GBTLB,       &ptr, Alignment, n*sizeof(T)); break;
-                case MEMKIND_HBM_4K: ret = memkind_posix_memalign(MEMKIND_HBW,         &ptr, Alignment, n*sizeof(T)); break;
-                case MEMKIND_HBM_2M: ret = memkind_posix_memalign(MEMKIND_HBW_HUGETLB, &ptr, Alignment, n*sizeof(T)); break;
-                case MEMKIND_HBM_1G: ret = memkind_posix_memalign(MEMKIND_HBW_GBTLB,   &ptr, Alignment, n*sizeof(T)); break;
-            }
+    return ptr;
+}
 
-            if (ret != 0) throw std::bad_alloc();
+template <typename T, MemoryType Type, size_t Alignment>
+void AlignedAllocator<T,Type,Alignment>::deallocate(T* ptr, size_t n) const
+{
+    if (Type == MEMORY_DDR_4K || Type == MEMORY_HBM_4K)
+    {
+        free(ptr);
+    }
+    else
+    {
+        char* orig_ptr = *((char**)ptr-1);
+        free_hugepage_region(orig_ptr);
+    }
+}
 
-            return ptr;
-        }
+#else
 
-        void deallocate(const T* ptr, size_t n) const
-        {
-            switch (Type)
-            {
-                case MEMKIND_DDR_4K: memkind_free(MEMKIND_DEFAULT,     ptr); break;
-                case MEMKIND_DDR_2M: memkind_free(MEMKIND_HUGETLB,     ptr); break;
-                case MEMKIND_DDR_1G: memkind_free(MEMKIND_GBTLB,       ptr); break;
-                case MEMKIND_HBM_4K: memkind_free(MEMKIND_HBW,         ptr); break;
-                case MEMKIND_HBM_2M: memkind_free(MEMKIND_HBW_HUGETLB, ptr); break;
-                case MEMKIND_HBM_1G: memkind_free(MEMKIND_HBW_GBTLB,   ptr); break;
-            }
-        }
+template <typename T, MemoryType Type, size_t Alignment>
+T* AlignedAllocator<T,Type,Alignment>::allocate(size_t n) const
+{
+    T* ptr;
+    int ret = posix_memalign((void**)&ptr, Alignment, n*sizeof(T));
+    if (ret != 0) throw std::bad_alloc();
+    return ptr;
+}
 
-        bool operator==(const MemkindAllocator& other) const { return true; }
-
-        bool operator!=(const MemkindAllocator& other) const { return false; }
-};
+template <typename T, MemoryType Type, size_t Alignment>
+void AlignedAllocator<T,Type,Alignment>::deallocate(T* ptr, size_t n) const
+{
+    free(ptr);
+}
 
 #endif
 

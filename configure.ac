@@ -39,7 +39,14 @@ AQ_WITH_PACKAGE([blis], [https://github.com/flame/blis],
 AQ_WITH_PACKAGE([memkind], [],
                 [memkind.h], [],
                 [memkind_get_version], [-lmemkind])
-                
+
+#
+# Check for libhugetlbfs
+#
+AQ_WITH_PACKAGE([libhugetlbfs], [],
+                [hugetlbfs.h], [],
+                [get_hugepage_region], [-lhugetlbfs])
+
 mkdir -p bin
 
 AC_CONFIG_FILES([Makefile])

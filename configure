@@ -625,6 +625,10 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+HAVE_LIBHUGETLBFS_FALSE
+HAVE_LIBHUGETLBFS_TRUE
+libhugetlbfs_LIBS
+libhugetlbfs_INCLUDES
 HAVE_MEMKIND_FALSE
 HAVE_MEMKIND_TRUE
 memkind_LIBS
@@ -732,6 +736,8 @@ with_blis
 with_blis_libs
 with_memkind
 with_memkind_libs
+with_libhugetlbfs
+with_libhugetlbfs_libs
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1375,6 +1381,10 @@ Optional Packages:
   --with-memkind=<dir>    Specify the location of memkind.
   --with-memkind-libs=<...>
                           Specify the libraries to link for memkind.
+  --with-libhugetlbfs=<dir>
+                          Specify the location of libhugetlbfs.
+  --with-libhugetlbfs-libs=<...>
+                          Specify the libraries to link for libhugetlbfs.
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -2079,7 +2089,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-am__api_version='1.15'
+am__api_version='1.14'
 
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
@@ -2280,8 +2290,8 @@ test "$program_suffix" != NONE &&
 ac_script='s/[\\$]/&&/g;s/;s,x,x,$//'
 program_transform_name=`$as_echo "$program_transform_name" | sed "$ac_script"`
 
-# Expand $ac_aux_dir to an absolute path.
-am_aux_dir=`cd "$ac_aux_dir" && pwd`
+# expand $ac_aux_dir to an absolute path
+am_aux_dir=`cd $ac_aux_dir && pwd`
 
 if test x"${MISSING+set}" != xset; then
   case $am_aux_dir in
@@ -2300,7 +2310,7 @@ else
 $as_echo "$as_me: WARNING: 'missing' script is too old or missing" >&2;}
 fi
 
-if test x"${install_sh+set}" != xset; then
+if test x"${install_sh}" != xset; then
   case $am_aux_dir in
   *\ * | *\	*)
     install_sh="\${SHELL} '$am_aux_dir/install-sh'" ;;
@@ -2628,8 +2638,8 @@ MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}
 # <http://lists.gnu.org/archive/html/automake/2012-07/msg00014.html>
 mkdir_p='$(MKDIR_P)'
 
-# We need awk for the "check" target (and possibly the TAP driver).  The
-# system "awk" is bad on some platforms.
+# We need awk for the "check" target.  The system "awk" is bad on
+# some platforms.
 # Always define AMTAR for backward compatibility.  Yes, it's still used
 # in the wild :-(  We should find a proper way to deprecate it ...
 AMTAR='$${TAR-tar}'
@@ -2686,7 +2696,6 @@ END
     as_fn_error $? "Your 'rm' program is bad, sorry." "$LINENO" 5
   fi
 fi
-
 # Check whether --enable-silent-rules was given.
 if test "${enable_silent_rules+set}" = set; then :
   enableval=$enable_silent_rules;
@@ -4328,6 +4337,131 @@ fi
 
 
 
+#
+# Check for libhugetlbfs
+#
+
+    download=no
+    downloaded=no
+
+# Check whether --with-libhugetlbfs was given.
+if test "${with_libhugetlbfs+set}" = set; then :
+  withval=$with_libhugetlbfs;
+else
+  download=yes
+fi
+
+
+        libraries=
+
+# Check whether --with-libhugetlbfs-libs was given.
+if test "${with_libhugetlbfs_libs+set}" = set; then :
+  withval=$with_libhugetlbfs_libs;
+else
+  libraries="-lhugetlbfs"
+fi
+
+        if test x"$libraries" == x; then
+            libraries=$with_libhugetlbfs_libs
+        fi
+
+    pkg_dir=$with_libhugetlbfs
+    if test x"$pkg_dir" = xno; then
+
+        include_package=no
+    elif test x"$download" = xyes && test x"" = x; then
+        include_package=no
+    else
+        if test x"$download" = xyes && test x"" != x; then
+            pkg_dir=src/external/libhugetlbfs
+            if ! test -d $pkg_dir; then
+                { $as_echo "$as_me:${as_lineno-$LINENO}: downloading libhugetlbfs from external Git repository..." >&5
+$as_echo "$as_me: downloading libhugetlbfs from external Git repository..." >&6;}
+                if ! git clone -q  $pkg_dir; then
+                    as_fn_error $? "could not download libhugetlbfs repository" "$LINENO" 5
+                fi
+            fi
+            if test -f $pkg_dir/configure; then
+                { $as_echo "$as_me:${as_lineno-$LINENO}: configuring libhugetlbfs in $pkg_dir" >&5
+$as_echo "$as_me: configuring libhugetlbfs in $pkg_dir" >&6;}
+                ( cd $pkg_dir && ./configure )
+                { $as_echo "$as_me:${as_lineno-$LINENO}: done configuring libhugetlbfs" >&5
+$as_echo "$as_me: done configuring libhugetlbfs" >&6;}
+            fi
+            downloaded=yes
+        fi
+
+            include_flags=
+            for dir_path in include; do
+                as_fn_append include_flags " -I$pkg_dir/$dir_path"
+            done
+            for header in hugetlbfs.h; do
+                  ac_save_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS $include_flags "
+  as_ac_Header=`$as_echo "ac_cv_header_$header" | $as_tr_sh`
+ac_fn_cxx_check_header_compile "$LINENO" "$header" "$as_ac_Header" "$ac_includes_default
+"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
+
+else
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Could not find $header.
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+
+
+  CPPFLAGS="$ac_save_CPPFLAGS"
+
+            done
+            libhugetlbfs_INCLUDES=$include_flags
+
+
+        if test x"get_hugepage_region" != x; then
+            lib_flags=
+            for dir_path in lib lib64; do
+                as_fn_append lib_flags " -L$pkg_dir/$dir_path"
+            done
+            as_fn_append lib_flags " $libraries"
+            if test x"$downloaded" != xyes; then
+                for symbol in get_hugepage_region; do
+                      ac_save_LIBS="$LIBS"
+  LIBS="$LIBS $lib_flags  $LAPACK_LIBS $BLAS_LIBS"
+  as_ac_var=`$as_echo "ac_cv_func_$symbol" | $as_tr_sh`
+ac_fn_cxx_check_func "$LINENO" "$symbol" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
+
+else
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "Could not find $symbol in $libraries.
+See \`config.log' for more details" "$LINENO" 5; }
+fi
+
+  LIBS="$ac_save_LIBS"
+
+                done
+            fi
+            libhugetlbfs_LIBS=$lib_flags
+
+        fi
+        include_package=yes
+    fi
+    if test x"$include_package" = xyes; then :
+
+$as_echo "#define HAVE_LIBHUGETLBFS 1" >>confdefs.h
+
+fi
+     if test x"$include_package" = xyes; then
+  HAVE_LIBHUGETLBFS_TRUE=
+  HAVE_LIBHUGETLBFS_FALSE='#'
+else
+  HAVE_LIBHUGETLBFS_TRUE='#'
+  HAVE_LIBHUGETLBFS_FALSE=
+fi
+
+
+
 mkdir -p bin
 
 ac_config_files="$ac_config_files Makefile"
@@ -4480,6 +4614,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HAVE_MEMKIND_TRUE}" && test -z "${HAVE_MEMKIND_FALSE}"; then
   as_fn_error $? "conditional \"HAVE_MEMKIND\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_LIBHUGETLBFS_TRUE}" && test -z "${HAVE_LIBHUGETLBFS_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_LIBHUGETLBFS\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

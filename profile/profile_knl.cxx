@@ -1,5 +1,3 @@
-#include "blis++.hpp"
-
 #include <cstdlib>
 #include <cstdio>
 #include <iostream>
@@ -9,16 +7,13 @@
 #include <tuple>
 #include <utility>
 
+#include "blis++.hpp"
+
 using namespace std;
 using namespace blis;
 
-#ifdef BLISPP_HAVE_MEMKIND
 template <typename T>
-using AlignedMatrix = Matrix<T,MemkindAllocator<T,MEMKIND_HBM_2M>>;
-#else
-template <typename T>
-using AlignedMatrix = Matrix<T,AlignedAllocator<T>>;
-#endif
+using AlignedMatrix = Matrix<T,AlignedAllocator<T,MEMORY_HBM_2M>>;
 
 #define NREPEAT 5
 
@@ -104,7 +99,9 @@ class range
 
                 friend range_iterator operator+(difference_type n, const range_iterator& x)
                 {
-                    return x+n;
+                    range_iterator ret(x);
+                    ret += n;
+                    return ret;
                 }
 
                 range_iterator operator-(difference_type n) const

@@ -207,12 +207,12 @@ T* AlignedAllocator<T,Type,Alignment>::allocate(size_t n) const
 
     switch (Type)
     {
-        case MEMORY_DDR_4K: ret = memkind_posix_memalign(MEMKIND_DEFAULT,     &ptr, Alignment, n*sizeof(T)); break;
-        case MEMORY_DDR_2M: ret = memkind_posix_memalign(MEMKIND_HUGETLB,     &ptr, Alignment, n*sizeof(T)); break;
-        case MEMORY_DDR_1G: ret = memkind_posix_memalign(MEMKIND_GBTLB,       &ptr, Alignment, n*sizeof(T)); break;
-        case MEMORY_HBM_4K: ret = memkind_posix_memalign(MEMKIND_HBW,         &ptr, Alignment, n*sizeof(T)); break;
-        case MEMORY_HBM_2M: ret = memkind_posix_memalign(MEMKIND_HBW_HUGETLB, &ptr, Alignment, n*sizeof(T)); break;
-        case MEMORY_HBM_1G: ret = memkind_posix_memalign(MEMKIND_HBW_GBTLB,   &ptr, Alignment, n*sizeof(T)); break;
+        case MEMORY_DDR_4K: ret = memkind_posix_memalign(MEMKIND_DEFAULT,     (void**)&ptr, Alignment, n*sizeof(T)); break;
+        case MEMORY_DDR_2M: ret = memkind_posix_memalign(MEMKIND_HUGETLB,     (void**)&ptr, Alignment, n*sizeof(T)); break;
+        case MEMORY_DDR_1G: ret = memkind_posix_memalign(MEMKIND_GBTLB,       (void**)&ptr, Alignment, n*sizeof(T)); break;
+        case MEMORY_HBM_4K: ret = memkind_posix_memalign(MEMKIND_HBW,         (void**)&ptr, Alignment, n*sizeof(T)); break;
+        case MEMORY_HBM_2M: ret = memkind_posix_memalign(MEMKIND_HBW_HUGETLB, (void**)&ptr, Alignment, n*sizeof(T)); break;
+        case MEMORY_HBM_1G: ret = memkind_posix_memalign(MEMKIND_HBW_GBTLB,   (void**)&ptr, Alignment, n*sizeof(T)); break;
     }
 
     if (ret != 0) throw std::bad_alloc();
@@ -221,7 +221,7 @@ T* AlignedAllocator<T,Type,Alignment>::allocate(size_t n) const
 }
 
 template <typename T, MemoryType Type, size_t Alignment>
-void AlignedAllocator<T,Type,Alignment>::deallocate(const T* ptr, size_t n) const
+void AlignedAllocator<T,Type,Alignment>::deallocate(T* ptr, size_t n) const
 {
     switch (Type)
     {

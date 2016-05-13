@@ -62,9 +62,11 @@ AC_DEFUN([AQ_WITH_PACKAGE],
         m4_ifval([$3],
         [
             include_flags=
-            for dir_path in m4_default([$4],[include]); do
-                AS_VAR_APPEND([include_flags],[" -I$pkg_dir/$dir_path"])
-            done
+            if test x"$pkg_dir" != xyes; then
+                for dir_path in m4_default([$4],[include]); do
+                    AS_VAR_APPEND([include_flags],[" -I$pkg_dir/$dir_path"])
+                done
+            fi
             for header in $3; do
                 AQ_CHECK_HEADER_WITH_PATH([$header],
                                           [],
@@ -77,9 +79,11 @@ AC_DEFUN([AQ_WITH_PACKAGE],
         ])
         if test x"$5" != x; then
             lib_flags=
-            for dir_path in m4_default([$7],[lib lib64]); do
-                AS_VAR_APPEND([lib_flags],[" -L$pkg_dir/$dir_path"])
-            done
+            if test x"$pkg_dir" != xyes; then
+                for dir_path in m4_default([$7],[lib lib64]); do
+                    AS_VAR_APPEND([lib_flags],[" -L$pkg_dir/$dir_path"])
+                done
+            fi
             AS_VAR_APPEND([lib_flags], [" $libraries"])
             if test x"$downloaded" != xyes; then
                 for symbol in $5; do

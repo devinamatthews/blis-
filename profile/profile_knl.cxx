@@ -13,7 +13,7 @@ using namespace std;
 using namespace blis;
 
 template <typename T>
-using AlignedMatrix = Matrix<T,AlignedAllocator<T,MEMORY_HBM_2M>>;
+using AlignedMatrix = Matrix<T,AlignedAllocator<T,MEMORY_HBM>>;
 
 #define NREPEAT 5
 
@@ -249,6 +249,20 @@ void run_experiment(char dt, range m_range, range n_range, range k_range)
         {
             for (dim_t k : k_range)
             {
+                int var = 0;
+                if      (m > 0 && m_range.begin() != m_range.end()) var = m;
+                else if (n > 0 && n_range.begin() != n_range.end()) var = n;
+                else if (k > 0 && k_range.begin() != k_range.end()) var = k;
+                else if (m <= 0 || n <= 0 || k <= 0)
+                {
+                    cerr << "No variable dimension" << endl;
+                    exit(1);
+                }
+
+                if (m <= 0) m = var;
+                if (n <= 0) n = var;
+                if (k <= 0) k = var;
+
                 double gflops;
                 switch (dt)
                 {
@@ -258,8 +272,13 @@ void run_experiment(char dt, range m_range, range n_range, range k_range)
                     case 'z': gflops = run_trial<dComplex>(m, n, k); break;
                 }
                 printf("%d %d %d %f\n", m, n, k, gflops);
+		fflush(stdout);
+
+                if (k <= 0) break;
             }
+            if (n <= 0) break;
         }
+        if (m <= 0) break;
     }
     cout << endl;
 }

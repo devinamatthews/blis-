@@ -38,7 +38,7 @@ AQ_WITH_PACKAGE([blis], [https://github.com/flame/blis],
 #
 AQ_WITH_PACKAGE([memkind], [],
                 [memkind.h], [],
-                [memkind_get_version], [-lmemkind])
+                [memkind_malloc], [-lmemkind])
 
 #
 # Check for libhugetlbfs
